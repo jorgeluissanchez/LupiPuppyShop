@@ -1,5 +1,5 @@
 const jwt = require("jsonwebtoken");
-const { error, success } = require("../response");
+const { error } = require("../response");
 const { config } = require("../../config");
 
 const auth = (req, res, next) => {
@@ -9,8 +9,7 @@ const auth = (req, res, next) => {
   const token = authHeader.split(" ")[1];
   jwt.verify(token, config.authJwtSecret, (err, decoded) => {
     if (err) return error(req, res, "Internal error", 403, err);
-    req.fullName = decoded.UserInfo.fullName;
-    req.roles = decoded.UserInfo.roles;
+    req.roles = decoded.roles;
     next();
   });
 };

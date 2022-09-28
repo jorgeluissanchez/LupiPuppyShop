@@ -18,10 +18,20 @@ const remove = (id) => {
     _id: id,
   });
 };
+const listID = async (id) => {
+  const data = await Model.findById(id);
+  return data;
+};
+const update = async (id, body) => {
+  const product = await Model.findByIdAndUpdate(id, body);
+  return product;
+};
 
 module.exports = {
   register: register,
   login: login,
+  listID: listID,
   list: list,
   remove: remove,
+  update: update,
 };

@@ -22,7 +22,6 @@ router.post(
         req.body.name,
         req.body.description,
         req.body.category,
-        req.body.stock,
         req.body.price,
         req.file
       )
@@ -56,11 +55,25 @@ router.get("/:id", verifyRoles(roles.User), (req, res) => {
       response.error(req, res, "Internal error", 500, err);
     });
 });
-
+router.put("/:id", verifyRoles(roles.User), (req, res) => {
+  controller
+    .updateProduct(req.params.id, req.body)
+    .then(() => {
+      response.success(
+        req,
+        res,
+        `Product ${req.params.id} has been update`,
+        200
+      );
+    })
+    .catch((err) => {
+      response.error(req, res, "Internal error", 500, err);
+    });
+});
 router.delete("/:id", verifyRoles(roles.Admin, roles.Editor), (req, res) => {
   controller
     .deleteProduct(req.params.id)
-    .then((data) => {
+    .then(() => {
       response.success(
         req,
         res,

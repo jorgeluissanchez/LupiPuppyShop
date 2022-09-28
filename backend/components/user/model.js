@@ -7,16 +7,19 @@ const mySchema = new Schema(
   {
     fullName: String,
     email: String,
+    isAvailable: {
+      type: Boolean,
+      default: true,
+    },
+    password: String,
+    refreshToken: [String],
     roles: {
       user: { type: Number, default: config.roles.User },
       editor: Number,
       admin: Number,
     },
-    password: String,
-    refreshToken: [String],
-    date: String,
   },
-  { versionKey: false }
+  { versionKey: false, timestamps: true }
 );
 
 const model = mongoose.model("User", mySchema);

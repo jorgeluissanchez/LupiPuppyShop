@@ -10,8 +10,8 @@ const {
   loginUser,
   listUser,
   logout,
+  updateUser,
   deleteUser,
-  refreshToken,
 } = require("./controller");
 
 router.post("/register", (req, res) => {
@@ -37,22 +37,11 @@ router.post("/login", (req, res) => {
       error(req, res, "Internal error", 500, err);
     });
 });
-
-router.get("/refresh", (req, res) => {
-  const cookies = req.cookies;
-
-  refreshToken(cookies, res)
-    .then((data) => {
-      success(req, res, data, 201);
-    })
-    .catch((err) => {
-      error(req, res, "Internal error", 500, err);
-    });
-});
 router.get("/logout", (req, res) => {
-  const cookies = req.cookies;
+  const authHeader = req.cookies;
+  console.log(authHeader);
 
-  logout(cookies, res)
+  logout(authHeader, res)
     .then((data) => {
       success(req, res, data, 201);
     })
@@ -70,7 +59,6 @@ router.get("/", verifyJWT, verifyRoles(ROLES.Admin), (req, res) => {
       error(req, res, "Internal error", 500, err);
     });
 });
-
 router.delete("/:id", verifyJWT, verifyRoles(ROLES.Admin), (req, res) => {
   const { id } = req.params;
 
@@ -83,4 +71,13 @@ router.delete("/:id", verifyJWT, verifyRoles(ROLES.Admin), (req, res) => {
     });
 });
 
+router.put("/:id", verifyJWT, verifyRoles(ROLES.Admin), (req, res) => {
+  updateUser(req.params.id, req.body)
+    .then(() => {
+      success(req, res, `User ${req.params.id} has been update`, 200);
+    })
+    .catch((err) => {
+      error(req, res, "Internal error", 500, err);
+    });
+});
 module.exports = router;

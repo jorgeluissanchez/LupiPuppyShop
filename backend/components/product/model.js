@@ -7,12 +7,14 @@ const mySchema = new Schema(
     name: String,
     description: String,
     category: String,
-    stock: Number,
+    isAvailable: {
+      type: Boolean,
+      default: true,
+    },
     price: Number,
     image: String,
-    date: String,
   },
-  { versionKey: false }
+  { versionKey: false, timestamps: true }
 );
 
 const model = mongoose.model("Product", mySchema);

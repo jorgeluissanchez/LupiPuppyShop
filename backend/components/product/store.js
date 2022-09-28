@@ -1,28 +1,33 @@
 const Model = require("./model");
 
-function addProduct(Product) {
-  const myUser = new Model(Product);
-  return myUser.save();
-}
+const addProduct = (Product) => {
+  const data = new Model(Product);
+  return data.save();
+};
 
-async function listProduct(id) {
-  const user = await Model.findById(id);
-  return user;
-}
+const listProduct = async (id) => {
+  const data = await Model.findById(id);
+  return data;
+};
 
-function listProducts() {
+const listProducts = () => {
   return Model.find();
-}
+};
 
-function removeProduct(id) {
+const removeProduct = (id) => {
   return Model.deleteOne({
     _id: id,
   });
-}
+};
+const updateProduct = async (id, body) => {
+  const product = await Model.findByIdAndUpdate(id, body);
+  return product;
+};
 
 module.exports = {
   add: addProduct,
   list: listProducts,
   listID: listProduct,
   remove: removeProduct,
+  update: updateProduct,
 };

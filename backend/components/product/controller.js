@@ -1,15 +1,13 @@
 const store = require("./store");
 const { config } = require("../../config");
 
-function addProduct(name, description, category, stock, price, image) {
+function addProduct(name, description, category, price, image) {
   if (!name) {
     return Promise.reject("Invalid name");
   } else if (!description) {
     return Promise.reject("Invalid description");
   } else if (!category) {
     return Promise.reject("Invalid category");
-  } else if (!stock) {
-    return Promise.reject("Invalid stock");
   } else if (!price) {
     return Promise.reject("Invalid price");
   } else if (!image) {
@@ -21,27 +19,12 @@ function addProduct(name, description, category, stock, price, image) {
         config.port + config.public_route + config.fileRoute
       }/${image.filename}`;
     }
-
-    const date = new Date();
     const product = {
       name: name,
       description: description,
       category: category,
-      stock: stock,
       price: price,
       image: fileUrl,
-      date:
-        date.getDate() +
-        "/" +
-        (date.getMonth() + 1) +
-        "/" +
-        date.getFullYear() +
-        " " +
-        date.getHours() +
-        ":" +
-        date.getMinutes() +
-        ":" +
-        date.getSeconds(),
     };
 
     return store.add(product);
@@ -50,6 +33,49 @@ function addProduct(name, description, category, stock, price, image) {
 
 function listProduct(id) {
   return store.listID(id);
+}
+async function updateProduct(_id, body) {
+  let { name, description, category, price, image, isAvailable } = body;
+  await store
+    .listID(_id)
+    .then((product) => {
+      if (name === undefined) {
+        name = product.name;
+      }
+      if (description === undefined) {
+        description = product.description;
+      }
+      if (category === undefined) {
+        category = product.category;
+      }
+      if (price === undefined) {
+        price = product.price;
+      }
+      if (isAvailable === undefined) {
+        isAvailable = product.isAvailable;
+      }
+      let fileUrl = "";
+      if (image === undefined) {
+        fileUrl = product.image;
+      }
+      if (image !== undefined) {
+        fileUrl = `${config.host}:${
+          config.port + config.public_route + config.fileRoute
+        }/${image.filename}`;
+      }
+      const productUpdate = {
+        name: name,
+        description: description,
+        category: category,
+        price: price,
+        image: fileUrl,
+        isAvailable: isAvailable,
+      };
+      return store.update(_id, productUpdate);
+    })
+    .catch((err) => {
+      return err;
+    });
 }
 
 function listProducts() {
@@ -77,6 +103,7 @@ function deleteProduct(id) {
 module.exports = {
   addProduct,
   listProduct,
+  updateProduct,
   listProducts,
   deleteProduct,
 };

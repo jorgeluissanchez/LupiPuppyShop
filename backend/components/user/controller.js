@@ -1,4 +1,4 @@
-const { register, login, list, remove } = require("./store");
+const { register, login, list, listID, remove, update } = require("./store");
 const { config } = require("../../config");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
@@ -25,25 +25,12 @@ const resgisterUser = (fullName, email, password) => {
     if (!error) {
       const findUser = await Model.findOne({ email: email }).exec();
       if (findUser == null) {
-        const date = new Date();
         const salt = await bcrypt.genSalt(10);
         const passw = await bcrypt.hash(password, salt);
         user = {
           fullName: fullName,
           email: email,
           password: passw,
-          date:
-            date.getDate() +
-            "/" +
-            (date.getMonth() + 1) +
-            "/" +
-            date.getFullYear() +
-            " " +
-            date.getHours() +
-            ":" +
-            date.getMinutes() +
-            ":" +
-            date.getSeconds(),
         };
         return resolve(register(user));
       } else {
@@ -74,17 +61,16 @@ const loginUser = (email, password, cookies, res) => {
           const roles = Object.values(findUser.roles).filter(Boolean);
           const access_token = jwt.sign(
             {
-              UserInfo: {
-                fullName: findUser.fullName,
-                roles: roles,
-              },
+              roles: roles,
+              id: findUser._id,
             },
             config.authJwtSecret,
             { expiresIn: "1h" }
           );
           const newRefreshToken = jwt.sign(
             {
-              fullName: findUser.fullName,
+              roles: roles,
+              id: findUser._id,
             },
             config.refreshJwtSecret,
             { expiresIn: "2h" }
@@ -109,7 +95,7 @@ const loginUser = (email, password, cookies, res) => {
             });
           }
 
-          findUser.refreshToken = [...newRefreshTokenArray, newRefreshToken];
+          findUser.refreshToken = [newRefreshToken];
           const response = await findUser.save();
           res.cookie("jwt", newRefreshToken, {
             httpOnly: true,
@@ -117,7 +103,7 @@ const loginUser = (email, password, cookies, res) => {
             sameSite: "None",
             maxAge: 24 * 60 * 60 * 1000,
           });
-          resolve({ access_token, roles });
+          resolve({ access_token });
         }
       }
     }
@@ -135,71 +121,6 @@ const listUser = (access_token) => {
   });
 };
 
-const refreshToken = (cookies, res) => {
-  return new Promise(async (resolve, reject) => {
-    const refreshToken = cookies.jwt;
-
-    if (!refreshToken) return reject("No hay un token de refresh");
-    res.clearCookie("jwt", { httpOnly: true, sameSite: "None", secure: true });
-    const foundToken = await Model.findOne({
-      refreshToken: refreshToken,
-    });
-
-    if (!foundToken) {
-      jwt.verify(
-        refreshToken,
-        config.refreshJwtSecret,
-        async (err, decoded) => {
-          if (err) return reject("Token de refresh invalido");
-          const findUser = await Model.findOne({
-            fullName: decoded.fullName,
-          });
-          findUser.refreshToken = [];
-          const result = await findUser.save();
-        }
-      );
-      return reject("Token de refresh invalido");
-    }
-    const newRefreshTokenArray = foundToken.refreshToken.filter(
-      (token) => token !== refreshToken
-    );
-
-    jwt.verify(refreshToken, config.refreshJwtSecret, async (err, decoded) => {
-      if (err) {
-        foundToken.refreshToken = [...newRefreshTokenArray, refreshToken];
-        const result = await foundToken.save();
-      }
-      const roles = Object.values(foundToken.roles).filter(Boolean);
-      const access_token = jwt.sign(
-        {
-          UserInfo: {
-            fullName: foundToken.fullName,
-            roles: roles,
-          },
-        },
-        config.authJwtSecret,
-        { expiresIn: "1h" }
-      );
-      const newRefreshToken = jwt.sign(
-        {
-          fullName: foundToken.fullName,
-        },
-        config.refreshJwtSecret,
-        { expiresIn: "2h" }
-      );
-      foundToken.refreshToken = [...newRefreshTokenArray, newRefreshToken];
-      const result = await foundToken.save();
-      res.cookie("jwt", newRefreshToken, {
-        httpOnly: true,
-        secure: true,
-        sameSite: "None",
-        maxAge: 24 * 60 * 60 * 1000,
-      });
-
-      resolve({ access_token });
-    });
-  });
-};
 const logout = async (cookies, res) => {
   return new Promise(async (resolve, reject) => {
     const refreshToken = cookies.jwt;
@@ -243,12 +164,44 @@ const deleteUser = (id) => {
       });
   });
 };
+async function updateUser(_id, body) {
+  let { fullName, email, password, isAvailable, roles } = body;
+  await listID(_id)
+    .then((user) => {
+      if (fullName === undefined) {
+        fullName = user.fullName;
+      }
+      if (email === undefined) {
+        email = user.email;
+      }
+      if (password === undefined) {
+        password = user.password;
+      }
+      if (isAvailable === undefined) {
+        isAvailable = user.isAvailable;
+      }
+      if (roles === undefined) {
+        roles = user.roles;
+      }
+      const userUpdate = {
+        fullName,
+        email,
+        password,
+        isAvailable,
+        roles,
+      };
+      return update(_id, userUpdate);
+    })
+    .catch((err) => {
+      return err;
+    });
+}
 
 module.exports = {
   resgisterUser,
   logout,
   loginUser,
+  updateUser,
   listUser,
   deleteUser,
-  refreshToken,
 };
